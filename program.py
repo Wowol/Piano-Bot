@@ -1,31 +1,107 @@
-import tensorflow as tf
-from tensorflow import keras 
-embed_dim = 128
-lstm_out = 200
-batch_size = 32
+# from __future__ import print_function
+# import tensorflow as tf
+# from tensorflow import keras
+# from midi import Midi
+# from keras_self_attention import SeqSelfAttention
+# from trainmodel import TrainModel
+# from tensorflow.keras.layers import Dropout
+# from tensorflow.keras.callbacks import ModelCheckpoint
+# from tensorflow.keras.optimizers import RMSprop
+# from tensorflow.keras.callbacks import LambdaCallback
+# from tensorflow.keras.models import Sequential
+# from tensorflow.keras.layers import Dense
+# from tensorflow.keras.layers import LSTM
+# from tensorflow.keras.optimizers import RMSprop
+# from keras.utils.data_utils import get_file
+# import numpy as np
+# import random
+# import sys
+# import io
+
+from midi import Midi
+
+# def create_model(seq_len, unique_notes, dropout=0.3, output_emb=100, rnn_unit=128, dense_unit=64):
+
+#     model = Sequential()
+#     model.add(LSTM(256, input_shape=(50, unique_notes)))
+#     model.add(Dense(unique_notes, activation='softmax'))
+#     optimizer = RMSprop(lr=0.01)
+#     model.compile(loss='categorical_crossentropy', optimizer=optimizer)
+#     return model
+
+    # inputs = tf.keras.layers.Input(shape=(seq_len,))
+    # embedding = tf.keras.layers.Embedding(
+    #     input_dim=unique_notes+1, output_dim=output_emb, input_length=seq_len)(inputs)
+    # forward_pass = tf.keras.layers.Bidirectional(
+    #     tf.keras.layers.GRU(rnn_unit, return_sequences=True))(embedding)
+    # # forward_pass, att_vector = SeqSelfAttention(
+    # #     return_attention=True,
+    # #     attention_activation='sigmoid',
+    # #     attention_type=SeqSelfAttention.ATTENTION_TYPE_MUL,
+    # #     attention_width=50,
+    # #     kernel_regularizer=tf.keras.regularizers.l2(1e-4),
+    # #     bias_regularizer=tf.keras.regularizers.l1(1e-4),
+    # #     attention_regularizer_weight=1e-4,
+    # # )(forward_pass)
+    # forward_pass = tf.keras.layers.Dropout(dropout)(forward_pass)
+    # forward_pass = tf.keras.layers.Bidirectional(
+    #     tf.keras.layers.GRU(rnn_unit, return_sequences=True))(forward_pass)
+    # # forward_pass, att_vector2 = SeqSelfAttention(
+    # #     return_attention=True,
+    # #     attention_activation='sigmoid',
+    # #     attention_type=SeqSelfAttention.ATTENTION_TYPE_MUL,
+    # #     attention_width=50,
+    # #     kernel_regularizer=tf.keras.regularizers.l2(1e-4),
+    # #     bias_regularizer=tf.keras.regularizers.l1(1e-4),
+    # #     attention_regularizer_weight=1e-4,
+    # # )(forward_pass)
+    # forward_pass = tf.keras.layers.Dropout(dropout)(forward_pass)
+    # forward_pass = tf.keras.layers.Bidirectional(
+    #     tf.keras.layers.GRU(rnn_unit))(forward_pass)
+    # forward_pass = tf.keras.layers.Dropout(dropout)(forward_pass)
+    # forward_pass = tf.keras.layers.Dense(dense_unit)(forward_pass)
+    # forward_pass = tf.keras.layers.LeakyReLU()(forward_pass)
+    # outputs = tf.keras.layers.Dense(
+    #     unique_notes+1, activation="softmax")(forward_pass)
+
+    # model = tf.keras.Model(inputs=inputs, outputs=outputs,
+    #                        name='generate_scores_rnn')
+    # return model
 
 
-def create_model(batch_size, seq_length, unique_chars):
-    model = tf.keras.models.Sequential()
+midi = Midi("midi_files")
 
-    model.add(tf.keras.layers.Embedding(input_dim=unique_chars, output_dim=512,
-                                        batch_input_shape=(batch_size, seq_length)))
+inputs, outputs, unique_notes = midi.prepare_data()
 
-    model.add(tf.keras.layers.LSTM(256, return_sequences=True, stateful=True))
-    model.add(tf.keras.layers.Dropout(0.2))
+model = create_model(50, unique_notes)
 
-    model.add(tf.keras.layers.LSTM(256, return_sequences=True, stateful=True))
-    model.add(tf.keras.layers.Dropout(0.2))
+model.fit(inputs, outputs,
+          batch_size=128,
+          epochs=1)
 
-    model.add(tf.keras.layers.LSTM(256, return_sequences=True, stateful=True))
-    model.add(tf.keras.layers.Dropout(0.2))
 
-    model.add(tf.keras.layers.TimeDistributed(
-        tf.keras.layers.Dense(unique_chars)))
-    model.add(tf.keras.layers.Activation("softmax"))
 
-    return model
-print(tf.test.gpu_device_name())# See https://www.tensorflow.org/tutorials/using_gpu#allowing_gpu_memory_growthconfig = tf.ConfigProto()config.gpu_options.allow_growth = True
+# seq_len = 50
+# EPOCHS = 4
+# BATCH_SONG = 16
+# BATCH_NNET_SIZE = 96
+# FRAME_PER_SECOND = 5
+
+# train_class = TrainModel(EPOCHS, inputs, outputs, FRAME_PER_SECOND,
+#                          BATCH_NNET_SIZE, BATCH_SONG, "adam", None, keras.losses.mean_squared_error,
+#                          None, model)
+
+# train_class.train()
+
+
+
+
+
+
+
+
+
+
 
 
 # fashion_mnist = keras.datasets.fashion_mnist
@@ -42,7 +118,7 @@ print(tf.test.gpu_device_name())# See https://www.tensorflow.org/tutorials/using
 #     keras.layers.Dense(10, activation=tf.nn.softmax)
 # ])
 
-# model.compile(optimizer='adam', 
+# model.compile(optimizer='adam',
 #               loss='sparse_categorical_crossentropy',
 #               metrics=['accuracy'])
 
