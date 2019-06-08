@@ -1,33 +1,41 @@
-# from __future__ import print_function
+from __future__ import print_function
 # import tensorflow as tf
-# from tensorflow import keras
-# from midi import Midi
-# from keras_self_attention import SeqSelfAttention
-# from trainmodel import TrainModel
-# from tensorflow.keras.layers import Dropout
-# from tensorflow.keras.callbacks import ModelCheckpoint
-# from tensorflow.keras.optimizers import RMSprop
-# from tensorflow.keras.callbacks import LambdaCallback
-# from tensorflow.keras.models import Sequential
-# from tensorflow.keras.layers import Dense
-# from tensorflow.keras.layers import LSTM
-# from tensorflow.keras.optimizers import RMSprop
-# from keras.utils.data_utils import get_file
-# import numpy as np
-# import random
-# import sys
-# import io
+from tensorflow.keras.callbacks import LambdaCallback
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, Activation
+from tensorflow.keras.layers import Dropout
+from tensorflow.python.keras.layers import CuDNNLSTM
+from tensorflow.keras.layers import Dropout
+from tensorflow.keras.optimizers import RMSprop
+from tensorflow.keras.models import load_model
 
+from keras.utils.data_utils import get_file
+import numpy as np
+import random
+import sys
+import io
 from midi import Midi
+import pretty_midi
 
-# def create_model(seq_len, unique_notes, dropout=0.3, output_emb=100, rnn_unit=128, dense_unit=64):
 
-#     model = Sequential()
-#     model.add(LSTM(256, input_shape=(50, unique_notes)))
-#     model.add(Dense(unique_notes, activation='softmax'))
-#     optimizer = RMSprop(lr=0.01)
-#     model.compile(loss='categorical_crossentropy', optimizer=optimizer)
-#     return model
+# from tensorflow.python.framework import ops
+# ops.reset_default_graph()
+
+
+def create_model(size, unique_notes):
+    model = Sequential()
+    model.add(CuDNNLSTM(512, input_shape=(
+        size, unique_notes), return_sequences=False))
+
+    model.add(Dense(unique_notes, activation='relu'))
+#     model.compile(loss="mean_squared_error", optimizer="rmsprop")
+#     model.add(Dropout(0.2))
+#     model.add(CuDNNLSTM(512))
+#     model.add(Dropout(0.2))
+#     model.add(Dense(unique_notes, activation='linear'))
+
+    model.compile(loss='mean_squared_error', optimizer="rmsprop")
+    return model
 
     # inputs = tf.keras.layers.Input(shape=(seq_len,))
     # embedding = tf.keras.layers.Embedding(
@@ -69,98 +77,72 @@ from midi import Midi
     # return model
 
 
-midi = Midi("midi_files")
+note_size = 50
 
-inputs, outputs, unique_notes = midi.prepare_data()
 
-model = create_model(50, unique_notes)
+def predict_next(model):
+
+    music_length = 1000
+
+    # arr = np.random.rand(1, note_size, 128)*127
+    # arr = np.random.choice(a=[False, True], size=(
+    #     1, note_size, 128), p=[0.5, 0.5])
+
+    midi = Midi("small_midi")
+
+
+    inputs, outputs = midi.prepare_data(note_size)
+
+    # arr = np.zeros((1, note_size, 128), dtype=float)
+    arr = np.array(inputs)
+
+    music = np.zeros((128, music_length), dtype=float)
+
+    for note_index in range(music_length):
+        predicted = model.predict(arr)[0]
+        print(predicted)
+        input()
+        bool_predicted = [True if k > 0 else False for k in predicted]
+
+        # kek_predicted = [255. - 255. / (255. + k) for k in predicted]
+        # print(predicted)
+        for i in range(len(predicted)):
+            music[i][note_index] = predicted[i]#127 if predicted[i] > 0 else 0
+        k = arr[0].tolist()
+        k = k[1:]
+        k.append(predicted)
+        k = [k]
+        arr = np.array(k)
+
+    # music = np.norma
+    generate_to_midi = Midi.piano_roll_to_pretty_midi(music, fs=10)
+    generate_to_midi.write("kek.midi")
+    print(music)
+
+
+midi = Midi("small_midi")
+
+
+inputs, outputs = midi.prepare_data(note_size)
+
+# i = 0
+# for k in outputs:
+#     i+=1
+#     print(i)
+#     print(k)
+#     input()
+
+inputs = np.array(inputs)
+outputs = np.array(outputs)
+
+model = create_model(note_size, 128)
+
 
 model.fit(inputs, outputs,
           batch_size=128,
-          epochs=1)
+          epochs=10, verbose=True)
 
+model.save('my_model_bool.h5')
 
-
-# seq_len = 50
-# EPOCHS = 4
-# BATCH_SONG = 16
-# BATCH_NNET_SIZE = 96
-# FRAME_PER_SECOND = 5
-
-# train_class = TrainModel(EPOCHS, inputs, outputs, FRAME_PER_SECOND,
-#                          BATCH_NNET_SIZE, BATCH_SONG, "adam", None, keras.losses.mean_squared_error,
-#                          None, model)
-
-# train_class.train()
-
-
-
-
-
-
-
-
-
-
-
-
-# fashion_mnist = keras.datasets.fashion_mnist
-
-# (train_images, train_labels), (test_images, test_labels) = fashion_mnist.load_data()
-
-# train_images = train_images / 255.0
-
-# test_images = test_images / 255.0
-
-# model = keras.Sequential([
-#     keras.layers.Flatten(input_shape=(28, 28)),
-#     keras.layers.Dense(128, activation=tf.nn.relu),
-#     keras.layers.Dense(10, activation=tf.nn.softmax)
-# ])
-
-# model.compile(optimizer='adam',
-#               loss='sparse_categorical_crossentropy',
-#               metrics=['accuracy'])
-
-# model.fit(train_images, train_labels, epochs=5)
-# model.fit(train_images, train_labels, epochs=5)
-
-
-# test_loss, test_acc = model.evaluate(test_images, test_labels)
-
-# print('Test accuracy:', test_acc)
-
-# model = create_model(50, 10, 20)
-# print(model.summary())
-
-
-# model = tf.keras.models.Sequential()
-# d = convert_to_dictionary(piano_roll)
-# token, reversed_token = create_tokens(d)
-# # print(d)
-# inputs, outputs = generate_inputs_and_outputs_to_neural_network(d, token)
-
-# print(token)
-
-# model.add(Embedding(2500, embed_dim,input_length = X.shape[1], dropout = 0.2))
-# model.add(LSTM(lstm_out, dropout_U = 0.2, dropout_W = 0.2))
-# model.add(Dense(2,activation='softmax'))
-# model.compile(loss = 'categorical_crossentropy', optimizer='adam',metrics = ['accuracy'])
-# print(model.summary())
-
-
-# token, reversed_token = create_tokens(inputs)
-
-
-# print(create_tokens(inputs))
-# print(generate_inputs_and_outputs_to_neural_network(d)[1])
-
-# print(type(piano_roll))
-# # print(len(piano_roll[1]))
-# # print(k for k in piano_roll[64])
-
-# for k in piano_roll:
-#     for i in k:
-#         if i != 0:
-#             print(i, end=' ')
-#     print()
+# model = load_model('my_model_bool.h5')
+predict_next(model)
