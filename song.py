@@ -1,6 +1,7 @@
 import numpy as np
 from midi import piano_roll_to_pretty_midi
 from random import randint
+from tqdm import tqdm
 
 
 class Song:
@@ -20,19 +21,19 @@ class Song:
             arr = np.array([first_notes])
 
         notes = []
-        for note_index in range(length):
+        for note_index in tqdm(range(length)):
             predicted = self._predict_next(model, arr)
             notes.append(predicted)
             arr = self._create_new_arr(predicted, arr)
 
         midi = self._create_piano_roll(notes, tokens, volume, fs)
-        midi.write("generated/" + name + ".mid")
+        midi.write(name + ".mid")
 
     def _create_piano_roll(self, notes, tokens, volume, fs):
         music = np.zeros((128, len(notes)), dtype=float)
 
         inverse_tokens = {v: k for k, v in tokens.items()}
-        for k in range(len(notes)):
+        for k in tqdm(range(len(notes))):
             a = notes[k]
             for q in inverse_tokens[notes[k]]:
                 music[q][k] = volume
