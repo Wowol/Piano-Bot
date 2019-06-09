@@ -42,8 +42,8 @@ class Midi:
                 music.append(new[i: i + batch_size])
                 next_music.append(new[i + batch_size])
 
-        self.inputs = music
-        self.outputs = next_music
+        self.inputs = np.array(music)
+        self.outputs = np.array(next_music)
 
         # inputs, outputs = self.generate_inputs_and_outputs_to_neural_network(
         #     dictionary)
@@ -146,35 +146,36 @@ class Midi:
             for k in a:
                 pass
 
-    def piano_roll_to_pretty_midi(piano_roll, fs=100, program=0):
-        notes, frames = piano_roll.shape
-        pm = pretty_midi.PrettyMIDI()
-        instrument = pretty_midi.Instrument(program=program)
 
-        piano_roll = np.pad(piano_roll, [(0, 0), (1, 1)], 'constant')
+def piano_roll_to_pretty_midi(piano_roll, fs=60, program=0):
+    notes, frames = piano_roll.shape
+    pm = pretty_midi.PrettyMIDI()
+    instrument = pretty_midi.Instrument(program=program)
 
-        velocity_changes = np.nonzero(np.diff(piano_roll).T)
+    piano_roll = np.pad(piano_roll, [(0, 0), (1, 1)], 'constant')
 
-        prev_velocities = np.zeros(notes, dtype=int)
-        note_on_time = np.zeros(notes)
+    velocity_changes = np.nonzero(np.diff(piano_roll).T)
 
-        for time, note in zip(*velocity_changes):
-            velocity = piano_roll[note, time + 1]
-            time = time / fs
-            if velocity > 0:
-                if prev_velocities[note] == 0:
-                    note_on_time[note] = time
-                    prev_velocities[note] = velocity
-            else:
-                pm_note = pretty_midi.Note(
-                    velocity=prev_velocities[note],
-                    pitch=note,
-                    start=note_on_time[note],
-                    end=time)
-                instrument.notes.append(pm_note)
-                prev_velocities[note] = 0
-        pm.instruments.append(instrument)
-        return pm
+    prev_velocities = np.zeros(notes, dtype=int)
+    note_on_time = np.zeros(notes)
+
+    for time, note in zip(*velocity_changes):
+        velocity = piano_roll[note, time + 1]
+        time = time / fs
+        if velocity > 0:
+            if prev_velocities[note] == 0:
+                note_on_time[note] = time
+                prev_velocities[note] = velocity
+        else:
+            pm_note = pretty_midi.Note(
+                velocity=prev_velocities[note],
+                pitch=note,
+                start=note_on_time[note],
+                end=time)
+            instrument.notes.append(pm_note)
+            prev_velocities[note] = 0
+    pm.instruments.append(instrument)
+    return pm
 
 
 # midi = Midi("small_midi")
