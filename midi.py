@@ -8,38 +8,42 @@ import argparse
 import numpy as np
 import pretty_midi
 
+
 class Midi:
-    def __init__(self, directory):
+
+    def __init__(self, directory, batch_size=50):
         self.tokens = {}
+        self.tokens[()] = 0
         self.number_of_unique = 1
         self.files = Midi._list_of_files_in_directory(directory)
+        self.prepare_data(batch_size)
 
-    def prepare_data(self, batch_size=50):
+    def prepare_data(self, batch_size):
         music = []
         next_music = []
 
         for file_name in tqdm(self.files):
             piano_roll = Midi._get_piano_roll(file_name)
-
-            # # # # # # tr = np.array(piano_roll).transpose()
-            # # # # # # new = np.zeros((128, len(tr)+batch_size), dtype=float)
-            # # # # # # for x in range(128):
-            # # # # # #     new[x][50:] = piano_roll[x]
-
-            # # # # # # new = np.transpose(new)
-
-            # # # # # # # tr = tr.astype(bool)
-
-            # # # # # # next_chars = []
-            # # # # # # for i in range(0, len(new) - batch_size, 1):
-            # # # # # #     music.append(new[i: i + batch_size])
-            # # # # # #     next_music.append(new[i + batch_size])
-
             dictionary = Midi._convert_to_dictionary(piano_roll)
             self.create_tokens(dictionary)
-            print(len(self.tokens))
-        print
-        return music, next_music
+
+        for file_name in tqdm(self.files):
+            piano_roll = Midi._get_piano_roll(file_name)
+            dictionary = Midi._convert_to_dictionary(piano_roll)
+            new = np.zeros((len(piano_roll[0]), len(self.tokens)), dtype=bool)
+
+            last_key = max(dictionary)
+            for k in range(last_key):  # , v in dictionary.items():
+                q = self.tokens[tuple(sorted(dictionary[k]))
+                                ] if k in dictionary else 0
+                new[k][q] = True
+
+            for i in range(0, len(new) - batch_size, 1):
+                music.append(new[i: i + batch_size])
+                next_music.append(new[i + batch_size])
+
+        self.inputs = music
+        self.outputs = next_music
 
         # inputs, outputs = self.generate_inputs_and_outputs_to_neural_network(
         #     dictionary)
@@ -67,7 +71,7 @@ class Midi:
     def _get_piano_roll(filename):
         midi_object = pretty_midi.PrettyMIDI(filename)
         piano = midi_object.instruments[0]
-        piano_roll = piano.get_piano_roll()
+        piano_roll = piano.get_piano_roll(fs=30)
         return piano_roll
 
     def _convert_to_dictionary(piano_roll):
@@ -142,43 +146,19 @@ class Midi:
             for k in a:
                 pass
 
-
-
-
     def piano_roll_to_pretty_midi(piano_roll, fs=100, program=0):
-        '''Convert a Piano Roll array into a PrettyMidi object
-        with a single instrument.
-        Parameters
-        ----------
-        piano_roll : np.ndarray, shape=(128,frames), dtype=int
-            Piano roll of one instrument
-        fs : int
-            Sampling frequency of the columns, i.e. each column is spaced apart
-            by ``1./fs`` seconds.
-        program : int
-            The program number of the instrument.
-        Returns
-        -------
-        midi_object : pretty_midi.PrettyMIDI
-            A pretty_midi.PrettyMIDI class instance describing
-            the piano roll.
-        '''
         notes, frames = piano_roll.shape
         pm = pretty_midi.PrettyMIDI()
         instrument = pretty_midi.Instrument(program=program)
 
-        # pad 1 column of zeros so we can acknowledge inital and ending events
         piano_roll = np.pad(piano_roll, [(0, 0), (1, 1)], 'constant')
 
-        # use changes in velocities to find note on / note off events
         velocity_changes = np.nonzero(np.diff(piano_roll).T)
 
-        # keep track on velocities and note on times
         prev_velocities = np.zeros(notes, dtype=int)
         note_on_time = np.zeros(notes)
 
         for time, note in zip(*velocity_changes):
-            # use time + 1 because of padding above
             velocity = piano_roll[note, time + 1]
             time = time / fs
             if velocity > 0:
@@ -199,4 +179,7 @@ class Midi:
 
 # midi = Midi("small_midi")
 
-# midi.prepare_data()
+# q = midi.prepare_data()[1]
+# for k in q:
+#     if k > 0:
+#     print(k)

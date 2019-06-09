@@ -4,12 +4,15 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense
 from tensorflow.keras.layers import LSTM
 from tensorflow.keras.optimizers import RMSprop
+from tensorflow.python.keras.layers import CuDNNLSTM
+
 from keras.utils.data_utils import get_file
 import numpy as np
 import random
 import sys
 import io
 
+path = get_file('nietzsche.txt', origin='https://s3.amazonaws.com/text-datasets/nietzsche.txt')
 with io.open(path, encoding='utf-8') as f:
     text = f.read().lower()
 print('corpus length:', len(text))
@@ -40,7 +43,7 @@ for i, sentence in enumerate(sentences):
 
 def create_model():
     model = Sequential()
-    model.add(LSTM(256, input_shape=(40, 57)))
+    model.add(CuDNNLSTM(256, input_shape=(40, 57)))
     model.add(Dense(57, activation='softmax'))
     optimizer = RMSprop(lr=0.01)
     model.compile(loss='categorical_crossentropy', optimizer=optimizer)
@@ -79,7 +82,6 @@ def on_epoch_end(epoch, _):
                 x_pred[0, t, char_indices[char]] = 1.
 
             preds = model.predict(x_pred, verbose=0)[0]
-            print(preds)
             next_index = sample(preds, diversity)
             next_char = indices_char[next_index]
 
@@ -96,3 +98,4 @@ print(np.shape(x))
 model.fit(x, y,
           batch_size=128,
           epochs=1, callbacks=[print_callback])
+
