@@ -1,4 +1,3 @@
-from __future__ import print_function
 from tensorflow.keras.callbacks import LambdaCallback
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Activation, LSTM

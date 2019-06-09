@@ -1,4 +1,3 @@
-from __future__ import division
 import pretty_midi
 import os
 from tqdm import tqdm
