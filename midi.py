@@ -32,7 +32,7 @@ class Midi:
             new = np.zeros((len(piano_roll[0]), len(self.tokens)), dtype=bool)
 
             last_key = max(dictionary)
-            for k in range(last_key):  # , v in dictionary.items():
+            for k in range(last_key):
                 q = self.tokens[tuple(sorted(dictionary[k]))
                                 ] if k in dictionary else 0
                 new[k][q] = True
@@ -43,12 +43,6 @@ class Midi:
 
         self.inputs = np.array(music)
         self.outputs = np.array(next_music)
-
-        # inputs, outputs = self.generate_inputs_and_outputs_to_neural_network(
-        #     dictionary)
-        # print(len(inputs), len(outputs))
-
-        # return inputs, outputs, self.number_of_unique
 
     def _list_of_files_in_directory(directory):
         result = []
@@ -112,33 +106,13 @@ class Midi:
                 for k in dictionary[begin+start]:
                     inputs[begin][size-1][k] = True
                     outputs[begin - 1][k] = True
-            #     dictionary[begin+start] if begin+start in dictionary else 0)
-
-            # if begin+start - 1 in dictionary:
-            #     for k in dictionary[begin+start - 1]:
-            #         break
         return inputs, outputs
-
-        # for begin in range(length - size):
-        #     if begin < size:
-        #         for i in range(size-begin):
-        #             inputs[begin].append(self.tokens['n'])
-
-        #         for i in range(begin):
-        #             inputs[begin].append(self.tokens[dictionary[i]])
-
-        #     if begin > size:
-        #         outputs.append(self.tokens[dictionary[begin]])
-        #     for s in range(begin, begin + size):
-        #         inputs[begin].append(self.tokens[dictionary[s]])  # n - no note
-        # return inputs, outputs
 
     def create_tokens(self, dictionary):
         for k in dictionary.values():
             if tuple(sorted(k)) not in self.tokens:
                 self.tokens[tuple(sorted(k))] = self.number_of_unique
                 self.number_of_unique += 1
-        # return tokens#, {val: key for (key, val)in tokens.items()}
 
     def convert_input(self, input, token):
         for a in input:
@@ -175,11 +149,3 @@ def piano_roll_to_pretty_midi(piano_roll, fs=60, program=0):
             prev_velocities[note] = 0
     pm.instruments.append(instrument)
     return pm
-
-
-# midi = Midi("small_midi")
-
-# q = midi.prepare_data()[1]
-# for k in q:
-#     if k > 0:
-#     print(k)
